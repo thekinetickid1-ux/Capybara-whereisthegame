@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capybara Hidden Mountain Onsen Tycoon</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 10px;
+            background: linear-gradient(135deg, #e4e9ed, #b9c6cd);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #263238;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            user-select: none;
+            overflow-y: auto;
+            overflow-x: hidden;
+            box-sizing: border-box;
+        }
+
+        #tycoon-container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+            max-width: 960px;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        h2 {
+            margin: 0;
+            color: #4e342e;
+            font-size: 1.4rem;
+            letter-spacing: -0.5px;
+            text-align: center;
+        }
+
+        #sub-info {
+            font-size: 0.8rem;
+            color: #78909c;
+            margin: -8px 0 5px 0;
+            text-align: center;
+            padding: 0 10px;
+        }
+
+        #control-panel {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            width: 100%;
+        }
+
+        .tycoon-btn {
+            background: #ffffff;
+            border: 1px solid #b0bec5;
+            color: #37474f;
+            padding: 10px 4px;
+            border-radius: 12px;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+        }
+
+        .tycoon-btn:hover:not(:disabled) {
+            border-color: #00796b;
+            background: #e0f2f1;
+        }
+
+        .tycoon-btn:disabled {
+            background: #f5f5f5;
+            color: #b0bec5;
+            cursor: not-allowed;
+        }
+
+        .tycoon-btn.active {
+            background: #e65100;
+            border-color: #ff9800;
+            color: #ffffff;
+        }
+
+        #hud {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            background: #ffffff;
+            padding: 12px;
+            border-radius: 14px;
+            box-sizing: border-box;
+            border: 1px solid #cfd8dc;
+        }
+
+        @media (min-width: 600px) {
+            #hud {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+        }
+
+        .stat-box {
+            font-weight: bold;
+            font-size: 0.85rem;
+            color: #455a64;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .stat-box span {
+            color: #00796b;
+            font-family: monospace;
+            font-size: 1rem;
+        }
+
+        .level-bar-container {
+            width: 80px;
+            height: 12px;
+            background: #eceff1;
+            border-radius: 8px;
+            border: 1px solid #cfd8dc;
+            overflow: hidden;
+            display: inline-block;
+            vertical-align: middle;
+            position: relative;
+        }
+
+        #level-bar-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50, #8bc34a);
+        }
+
+        #game-area {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+        }
+
+        #canvas-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            display: flex;
+            justify-content: center;
+            border-radius: 16px;
+        }
+
+        canvas {
+            background: #b6c7c6;
+            border-radius: 16px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+            border: 1px solid #b0bec5;
+            cursor: pointer;
+            width: 720px;
+            height: 460px;
+        }
+
+        #review-sidebar {
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #cfd8dc;
+            border-radius: 16px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 280px;
+            box-sizing: border-box;
+        }
+
+        @media (min-width: 900px) and (orientation: landscape) {
+            #game-area {
+                flex-direction: row;
+            }
+            #review-sidebar {
+                width: 240px;
+                height: 460px;
+            }
+        }
+
+        #review-sidebar h3 {
+            margin: 0;
+            font-size: 0.95rem;
+            color: #37474f;
+            border-bottom: 2px solid #eceff1;
+            padding-bottom: 6px;
+        }
+
+        #review-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            overflow-y: auto;
+            max-height: 240px;
+            padding-right: 4px;
+        }
+
+        @media (min-width: 900px) and (orientation: landscape) {
+            #review-container {
+                max-height: none;
+                flex-grow: 1;
+            }
+        }
+
+        .review-card {
+            background: #f8f9fa;
+            border-left: 4px solid #66bb6a;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+
+        .review-stars {
+            color: #ffca28;
+            font-weight: bold;
+        }
+
+        #cutscene-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(38, 50, 56, 0.95);
+            border-radius: 24px;
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
+        #cutscene-stage {
+            width: 100%;
+            max-width: 400px;
+            height: 180px;
+            background: #37474f;
+            border: 4px solid #78909c;
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .street-bg {
+            position: absolute;
+            bottom: 0; width: 100%; height: 40px; background: #263238;
+        }
+        
+        .rain-drop {
+            position: absolute;
+            width: 1px; height: 15px; background: rgba(129, 212, 250, 0.4);
+            animation: fall 0.6s linear infinite;
+        }
+
+        #begging-capy {
+            position: absolute;
+            bottom: 35px; left: 42%;
+        }
+
+        .mud-layer {
+            position: absolute;
+            top: 0; left: 0; width: 64px; height: 48px;
+            background: rgba(93, 64, 55, 0.7);
+            mix-blend-mode: multiply;
+            border-radius: 12px;
+        }
+
+        #cutscene-dialogue {
+            font-size: 1rem;
+            font-weight: bold;
+            margin-bottom: 2px;
+            color: #ffe082;
+            min-height: 28px;
+            padding: 0 10px;
+        }
+
+        .cutscene-btn {
+            background: #ff9800;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        #house-shop-panel {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+            height: 100%;
+        }
+
+        .shop-section-title {
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #5d4037;
+            text-transform: uppercase;
+            margin: 2px 0 0px 0;
+        }
+
+        .house-grid-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        #pet-talk-box {
+            display: flex;
+            gap: 4px;
+            margin-top: 4px;
+        }
+
+        #pet-talk-input {
+            flex-grow: 1;
+            padding: 6px;
+            border: 1px solid #b0bec5;
+            border-radius: 8px;
+            font-size: 0.8rem;
+        }
+
+        @keyframes fall { 0% { transform: translateY(-50px); } 100% { transform: translateY(220px); } }
+        @keyframes shiver { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-1px); } 75% { transform: translateX(1px); } }
+        .shivering { animation: shiver 0.15s infinite; }
+    </style>
+</head>
+<body>
+
+    <div id="tycoon-container">
+        <div id="cutscene-overlay">
+            <h2 id="cutscene-title" style="color: #ffb74d;">🌧️ A Lonely Soul in the Storm... 🌧️</h2>
+            <p style="font-size: 0.85rem; color: #b0bec5; margin-bottom: 15px;">Your resort's legendary rank drew an orphan guest.</p>
+            
+            <div id="cutscene-stage">
+                <div class="street-bg"></div>
+                <div id="begging-capy" class="shivering">
+                    <img id="cutscene-asset" src="1000012523.png" width="64" height="48">
+                    <div id="mud-overlay" class="mud-layer"></div>
+                </div>
+            </div>
+
+            <div id="cutscene-dialogue">"Squeak... Everything is cold... Help me..."</div>
+            <div id="cutscene-actions" style="margin-top: 15px;">
+                <button class="cutscene-btn" onclick="advanceCutsceneStep()">Adopt & Bring Inside</button>
+            </div>
+        </div>
+
+        <h2 id="main-title-header">🏔️ Valley of the Capybaras 🌲</h2>
+        <p id="sub-info">Feed them fresh Yuzu! High stress levels trigger immediate angry checkouts and level down penalties.</p>
+        
+        <div id="control-panel">
+            <button class="tycoon-btn" id="adopt-btn">🐾 Hire Capy Scout<br><span style="font-size:0.65rem;color:#78909c">Cost: 60🪙</span></button>
+            <button class="tycoon-btn" id="build-btn">♨️ Dig Thermal Pond<br><span style="font-size:0.65rem;color:#78909c">Cost: 100🪙</span></button>
+            <button class="tycoon-btn" id="shop-btn">🛒 Buy Yuzu Fruit<br><span style="font-size:0.65rem;color:#78909c">Cost: 20🪙</span></button>
+            <button class="tycoon-btn" id="feed-btn">🍊 Toss Yuzu Mode<br><span style="font-size:0.65rem;color:#78909c">Tap Map to Drop</span></button>
+        </div>
+
+        <div id="hud">
+            <div class="stat-box" id="hud-level-box">
+                <span>⭐ Lvl <span id="level-display">1</span></span>
+                <div class="level-bar-container"><div id="level-bar-fill"></div></div>
+                <span style="font-size:0.7rem; color:#78909c;">(<span id="xp-display">0</span>/50)</span>
+            </div>
+            <div class="stat-box">🪙 Coins: <span id="zen-display">250</span></div>
+            <div class="stat-box" id="hud-herd-box">🐾 Herd: <span id="capy-display">1</span></div>
+            <div class="stat-box" id="hud-stock-box">🍊 Yuzu Stock: <span id="yuzu-display">0</span></div>
+        </div>
+
+        <div id="game-area">
+            <div id="canvas-wrapper">
+                <canvas id="gameCanvas" width="720" height="460"></canvas>
+            </div>
+            
+            <div id="review-sidebar">
+                <div id="tycoon-reviews-layout" style="display: flex; flex-direction: column; height: 100%;">
+                    <h3>⭐ Guest Reviews Log</h3>
+                    <div id="review-container">
+                        <div class="review-card">
+                            <div class="review-stars">⭐⭐⭐⭐⭐</div>
+                            <strong>@LocalCapy:</strong> Beautiful scenery, highly recommend the natural grass.
+                        </div>
+                    </div>
+                </div>
+
+                <div id="house-shop-panel">
+                    <h3 style="color:#d84315;">🏡 Pet House Controls</h3>
+                    <p style="font-size:0.7rem; margin:0; color:#6d4c41;">👉 Drag finger or mouse horizontally across the capybara to pet it!</p>
+                    
+                    <div style="background:#efebe9; padding:5px 8px; border-radius:8px; font-size:0.75rem; font-weight:bold; color:#4e342e; display:flex; flex-direction:column; gap:4px;">
+                        <div>❤️ Affection Level: <span id="pet-love-stat">15</span>/100</div>
+                        <div style="display:flex; align-items:center; gap:5px;">
+                            <span>🍗 Belly Fullness:</span>
+                            <div class="level-bar-container" style="width:100px; height:10px;"><div id="hunger-bar-fill" style="width:100%; height:100%; background:#ff7043;"></div></div>
+                        </div>
+                    </div>
+
+                    <div class="shop-section-title">🍓 Treat Selection</div>
+                    <div class="house-grid-row">
+                        <button class="tycoon-btn" onclick="feedPetGourmet('🍪 Premium Cookie', 25, 10, 20)">🍪 Cookie<br><span style="font-size:0.6rem;color:#e65100;">25🪙 (+10❤️)</span></button>
+                        <button class="tycoon-btn" onclick="feedPetGourmet('🍉 Fresh Watermelon', 50, 25, 45)">🍉 Melon<br><span style="font-size:0.6rem;color:#e65100;">50🪙 (+25❤️)</span></button>
+                    </div>
+
+                    <div class="shop-section-title">👑 Dress Wardrobe</div>
+                    <div class="house-grid-row">
+                        <button class="tycoon-btn" onclick="equipPetAccessory('🎀 Pink Bow', 40)">🎀 Bow<br><span style="font-size:0.65rem;color:#e65100;">40🪙</span></button>
+                        <button class="tycoon-btn" onclick="equipPetAccessory('👑 Golden Crown', 90)">👑 Crown<br><span style="font-size:0.65rem;color:#e65100;">90🪙</span></button>
+                    </div>
+                    <div class="house-grid-row">
+                        <button class="tycoon-btn" onclick="equipPetAccessory('🕶️ Cool Shades', 65)">🕶️ Shades<br><span style="font-size:0.65rem;color:#e65100;">65🪙</span></button>
+                        <button class="tycoon-btn" onclick="equipPetAccessory('🎩 Top Hat', 80)">🎩 Top Hat<br><span style="font-size:0.65rem;color:#e65100;">80🪙</span></button>
+                    </div>
+
+                    <div class="shop-section-title">💬 Speak to your Pet</div>
+                    <div id="pet-talk-box">
+                        <input type="text" id="pet-talk-input" placeholder="Type a message...">
+                        <button class="tycoon-btn" style="padding: 2px 10px;" onclick="talkToPetCompanion()">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const zenDisplay = document.getElementById('zen-display');
+        const capyDisplay = document.getElementById('capy-display');
+        const yuzuDisplay = document.getElementById('yuzu-display');
+        const levelDisplay = document.getElementById('level-display');
+        const xpDisplay = document.getElementById('xp-display');
+        const levelBarFill = document.getElementById('level-bar-fill');
+        const reviewContainer = document.getElementById('review-container');
+        
+        const adoptBtn = document.getElementById('adopt-btn');
+        const buildBtn = document.getElementById('build-btn');
+        const shopBtn = document.getElementById('shop-btn');
+        const feedBtn = document.getElementById('feed-btn');
+
+        const cutsceneOverlay = document.getElementById('cutscene-overlay');
+        const cutsceneTitle = document.getElementById('cutscene-title');
+        const cutsceneDialogue = document.getElementById('cutscene-dialogue');
+        const mudOverlay = document.getElementById('mud-overlay');
+        const beggingCapy = document.getElementById('begging-capy');
+
+        const MAP_SIZE = 10;
+        const TILE_WIDTH = 72;
+        const TILE_HEIGHT = 36;
+        const OFFSET_X = canvas.width / 2;
+        const OFFSET_Y = 65;
+
+        let coinPoints = 250;
+        let yuzuStock = 2; 
+        let resortLevel = 1;
+        let resortXp = 0;
+        const MAX_XP_LIMIT = 50; 
+        let buildModeActive = false;
+        let feedModeActive = false;
+        let globalTime = 0;
+        let gamePaused = false;
+
+        let gameplayMode = "TYCOON"; 
+        let cheatTapCount = 0;
+        let isSlidingToPet = false;
+        let lastPetX = 0;
+
+        let myPetCapy = {
+            name: "Adoraboo",
+            accessory: "None",
+            love: 15,
+            hunger: 80, 
+            x: canvas.width / 2,
+            y: canvas.height / 2 + 40,
+            targetX: canvas.width / 2,
+            targetY: canvas.height / 2 + 40,
+            bob: 0,
+            statusText: "Cozying up by the warmth...",
+            textTimer: 100
+        };
+
+        const capyImage = new Image();
+        capyImage.src = '1000012523.png';
+
+        const houseBgImage = new Image();
+        houseBgImage.src = 'capybag.jpg';
+
+        let mapData = [
+            [3,3,3,3,3,3,3,3,3,3], [3,2,2,2,2,2,2,2,2,3], [3,2,0,0,4,0,0,0,2,3],
+            [3,2,0,0,0,0,0,0,2,3], [3,2,0,0,1,1,0,4,2,3], [3,2,0,4,1,1,0,0,2,3],
+            [3,2,0,0,0,0,0,0,2,3], [3,2,0,0,0,0,4,0,2,3], [3,2,2,2,2,2,2,2,2,3], [3,3,3,3,3,3,3,3,3,3]
+        ];
+
+        let stoneOffsets = [];
+        for (let i = 0; i < MAP_SIZE * MAP_SIZE; i++) {
+            stoneOffsets.push({
+                x: (Math.random() * 12 - 6), y: (Math.random() * 6 - 3), r: 4 + Math.random() * 4,
+                col: ["#90a4ae", "#78909c", "#b0bec5", "#607d8b"][Math.floor(Math.random() * 4)]
+            });
+        }
+
+        let capybaras = [];
+        let droppedYuzus = [];
+        let steamParticles = [];
+        let floatingTexts = [];
+        let petHouseHearts = [];
+
+        const dialogueLines = [
+            "Ah, total relaxation.", "Look at these nice onsen rocks...", "So warm...",
+            "Splendid water temp.", "Pondering nature...", "My stress is fading."
+        ];
+
+        const goodReviews = [
+            "Absolute 5-star experience! The Yuzu aroma was impeccable.",
+            "Water temp was perfect. Decreased my stress levels instantly.",
+            "Very clean springs. Will recommend to the rest of the herd!"
+        ];
+        const badReviews = [
+            "Terrible! Kept waiting for fruit, left completely famished.",
+            "0 stars. Extensively high stress environment. No Yuzu in stock!"
+        ];
+
+        function toIso(wx, wy) {
+            return { x: (wx - wy) * (TILE_WIDTH / 2) + OFFSET_X, y: (wx + wy) * (TILE_HEIGHT / 2) + OFFSET_Y };
+        }
+
+        function toWorld(sx, sy) {
+            let dx = sx - OFFSET_X; let dy = sy - OFFSET_Y;
+            return {
+                x: (dy / (TILE_HEIGHT / 2) + dx / (TILE_WIDTH / 2)) / 2,
+                y: (dy / (TILE_HEIGHT / 2) - dx / (TILE_WIDTH / 2)) / 2
+            };
+        }
+
+        function addFeedbackText(str) {
+            floatingTexts.push({ x: canvas.width / 2, y: canvas.height / 2, msg: str, life: 75 });
+        }
+
+        class RealisticCapybara {
+            constructor() {
+                this.wx = 4 + Math.random() * 2; this.wy = 4 + Math.random() * 2;
+                this.tx = this.wx; this.ty = this.wy;
+                this.stress = 20 + Math.random() * 20;
+                this.speed = 0.02; this.isSwimming = false;
+                this.facingLeft = Math.random() > 0.5; this.bob = Math.random() * Math.PI;
+                this.aiTimer = Math.random() * 50; this.chatBubble = null; this.chatTimer = 0;
+                this.scale = 1.1 + Math.random() * 0.15;
+                this.vacationTimer = 1800 + Math.random() * 1200;
+                this.name = ["Capy", "OnsenFan", "YuzuLover", "SpaKing", "ChillinBro"][Math.floor(Math.random()*5)] + Math.floor(Math.random()*90 + 10);
+            }
+
+            update() {
+                this.bob += 0.04;
+                this.vacationTimer--;
+
+                if (droppedYuzus.length > 0) {
+                    let targetFruit = droppedYuzus[0];
+                    this.tx = targetFruit.wx; this.ty = targetFruit.wy;
+                    this.aiTimer = 10;
+                    if (Math.sqrt((targetFruit.wx - this.wx)**2 + (targetFruit.wy - this.wy)**2) < 0.4) {
+                        droppedYuzus.shift();
+                        this.stress = Math.max(0, this.stress - 65);
+                        this.chatBubble = "NOM NOM NOM! Magnificent Yuzu! 🍊"; this.chatTimer = 130;
+                        addFeedbackText("✨ Snack Devoured!");
+                        this.planNextAction();
+                    }
+                }
+
+                let dx = this.tx - this.wx; let dy = this.ty - this.wy; let d = Math.sqrt(dx*dx + dy*dy);
+                if (d > 0.04) {
+                    this.wx += (dx / d) * this.speed; this.wy += (dy / d) * this.speed;
+                    this.facingLeft = dx < 0;
+                } else {
+                    this.wx = this.tx; this.wy = this.ty;
+                    if (--this.aiTimer <= 0) this.planNextAction();
+                }
+
+                let ix = Math.max(0, Math.min(MAP_SIZE-1, Math.floor(this.wx)));
+                let iy = Math.max(0, Math.min(MAP_SIZE-1, Math.floor(this.wy)));
+                if (mapData[iy][ix] === 1) {
+                    this.isSwimming = true; this.stress = Math.max(0, this.stress - 0.18);
+                    coinPoints += 0.15;
+                } else {
+                    this.isSwimming = false; this.stress = Math.min(100, this.stress + 0.12);
+                }
+
+                if (this.chatTimer > 0) {
+                    if (--this.chatTimer <= 0) this.chatBubble = null;
+                } else if (Math.random() < 0.0012) {
+                    this.chatBubble = dialogueLines[Math.floor(Math.random() * dialogueLines.length)];
+                    this.chatTimer = 130;
+                }
+            }
+
+            planNextAction() {
+                this.aiTimer = 140 + Math.random() * 180;
+                for (let a = 0; a < 8; a++) {
+                    let rx = Math.max(2, Math.min(MAP_SIZE-3, Math.floor(this.wx + (Math.random()*3 - 1.5))));
+                    let ry = Math.max(2, Math.min(MAP_SIZE-3, Math.floor(this.wy + (Math.random()*3 - 1.5))));
+                    if (mapData[ry][rx] !== 2 && mapData[ry][rx] !== 3) {
+                        this.tx = rx + 0.5; this.ty = ry + 0.5; break;
+                    }
+                }
+            }
+
+            draw() {
+                let pos = toIso(this.wx, this.wy);
+                let shift = Math.sin(this.bob) * 1.2;
+                ctx.save();
+                ctx.translate(pos.x, pos.y + shift);
+                ctx.scale(this.scale * 0.9, this.scale * 0.9);
+                if (!this.facingLeft) ctx.scale(-1, 1);
+                if (!this.isSwimming) {
+                    ctx.fillStyle = "rgba(0,0,0,0.08)"; ctx.beginPath(); ctx.ellipse(0, 12, 22, 6, 0, 0, Math.PI*2); ctx.fill();
+                } else {
+                    ctx.save(); ctx.beginPath(); ctx.rect(-35, -45, 70, 52); ctx.clip();
+                }
+                ctx.drawImage(capyImage, -32, -35, 64, 48);
+                if (this.isSwimming) ctx.restore();
+                ctx.restore();
+
+                ctx.font = "bold 10px sans-serif"; ctx.fillStyle = "#455a64"; ctx.textAlign = "center";
+                ctx.fillText(this.name, pos.x, pos.y - (this.isSwimming ? 34 : 44));
+
+                let barX = pos.x - 12; let barY = pos.y - (this.isSwimming ? 28 : 38);
+                ctx.fillStyle = "rgba(0,0,0,0.2)"; ctx.fillRect(barX, barY, 24, 3);
+                ctx.fillStyle = this.stress > 60 ? "#ef5350" : this.stress > 30 ? "#ffa726" : "#66bb6a";
+                ctx.fillRect(barX, barY, 24 * (this.stress / 100), 3);
+
+                if (this.chatBubble) {
+                    ctx.save(); ctx.font = "11px sans-serif";
+                    let tw = ctx.measureText(this.chatBubble).width;
+                    let bx = pos.x - tw/2 - 8; let by = pos.y - (this.isSwimming ? 45 : 55);
+                    ctx.fillStyle = "#ffffff"; ctx.strokeStyle = "#263238"; ctx.lineWidth = 1.5;
+                    ctx.beginPath(); ctx.roundRect(bx, by, tw + 16, 22, 6); ctx.fill(); ctx.stroke();
+                    ctx.fillStyle = "#263238"; ctx.textAlign = "center"; ctx.fillText(this.chatBubble, pos.x, by + 15);
+                    ctx.restore();
+                }
+            }
+        }
+
+        function triggerPostReview(capyInstance) {
+            let isHappy = capyInstance.stress < 75;
+            let card = document.createElement('div');
+            card.className = `review-card ${isHappy ? '' : 'bad'}`;
+            card.innerHTML = `<div class="review-stars">${isHappy?'⭐⭐⭐⭐⭐':'⭐'}</div><strong>@${capyInstance.name}:</strong> ${isHappy?goodReviews[Math.floor(Math.random()*goodReviews.length)]:badReviews[Math.floor(Math.random()*badReviews.length)]}`;
+            reviewContainer.insertBefore(card, reviewContainer.firstChild);
+
+            if (isHappy) {
+                resortXp += 15; addFeedbackText("👍 Good Review! +15 XP");
+            } else {
+                resortXp -= 20; addFeedbackText("🚨 Angry Checkout! Lost 20 XP");
+            }
+
+            if (resortXp >= MAX_XP_LIMIT) {
+                resortXp -= MAX_XP_LIMIT; resortLevel++; coinPoints += 100;
+                if (resortLevel === 10) triggerLevel10Cutscene();
+            } else if (resortXp < 0) {
+                resortLevel = Math.max(1, resortLevel - 1); resortXp = 0;
+            }
+        }
+
+        function triggerLevel10Cutscene() {
+            gamePaused = true;
+            cutsceneOverlay.style.display = "flex";
+            const stage = document.getElementById('cutscene-stage');
+            stage.querySelectorAll('.rain-drop').forEach(el => el.remove());
+            for(let i=0; i<25; i++) {
+                let drop = document.createElement('div'); drop.className = 'rain-drop';
+                drop.style.left = Math.random() * 400 + 'px'; drop.style.top = Math.random() * -100 + 'px';
+                drop.style.animationDelay = Math.random() * 0.6 + 's'; stage.appendChild(drop);
+            }
+        }
+
+        function advanceCutsceneStep() {
+            document.getElementById('cutscene-actions').innerHTML = `
+                <input type="text" id="pet-name-input" value="Adoraboo" style="padding:8px; border-radius:6px; text-align:center; font-size:1rem; width:140px;">
+                <button class="cutscene-btn" style="background:#4caf50; margin-left:8px;" onclick="confirmPetName()">Bring Home 🎉</button>
+            `;
+            cutsceneTitle.innerText = "🏡 Set Up The Indoor Sanctuary";
+            cutsceneDialogue.innerText = "Name your custom pet companion:";
+        }
+
+        function confirmPetName() {
+            let chosen = document.getElementById('pet-name-input').value.trim();
+            myPetCapy.name = chosen || "Adoraboo";
+            
+            cutsceneOverlay.style.display = "none";
+            gameplayMode = "HOUSE";
+            gamePaused = false; 
+            
+            document.getElementById('control-panel').style.display = "none";
+            document.getElementById('hud-level-box').style.display = "none";
+            document.getElementById('hud-herd-box').style.display = "none";
+            document.getElementById('hud-stock-box').style.display = "none";
+            document.getElementById('tycoon-reviews-layout').style.display = "none";
+            document.getElementById('house-shop-panel').style.display = "flex";
+            
+            document.getElementById('main-title-header').innerText = `🏡 ${myPetCapy.name}'s Cozy House`;
+            document.getElementById('sub-info').innerText = "Slide your mouse/finger across the capybara's back to give it warm pats!";
+            
+            addFeedbackText(`💖 Welcome Home, ${myPetCapy.name}!`);
+            requestAnimationFrame(engineFrameUpdate);
+        }
+
+        function feedPetGourmet(foodName, cost, loveGain, hungerGain) {
+            if (coinPoints >= cost) {
+                coinPoints -= cost;
+                myPetCapy.love = Math.min(100, myPetCapy.love + loveGain);
+                myPetCapy.hunger = Math.min(100, myPetCapy.hunger + hungerGain);
+                myPetCapy.statusText = `✨ Happily munched on ${foodName}! 🍗`;
+                myPetCapy.textTimer = 140;
+                document.getElementById('pet-love-stat').innerText = Math.floor(myPetCapy.love);
+                for(let i=0; i<6; i++) spawnHeartParticle(myPetCapy.x + Math.random()*40-20, myPetCapy.y - 20);
+            } else {
+                addFeedbackText("❌ Insufficient coins!");
+            }
+        }
+
+        function equipPetAccessory(item, cost) {
+            if (coinPoints >= cost) {
+                coinPoints -= cost;
+                myPetCapy.accessory = item;
+                myPetCapy.statusText = `👑 Looking stylish in ${item}!`;
+                myPetCapy.textTimer = 140;
+                addFeedbackText(`Equipped ${item}!`);
+            } else {
+                addFeedbackText("❌ Insufficient coins!");
+            }
+        }
+
+        function talkToPetCompanion() {
+            const inputEl = document.getElementById('pet-talk-input');
+            const userMsg = inputEl.value.trim().toLowerCase();
+            if(!userMsg) return;
+
+            let reply = "Squeak? (Looks up with large adorable curious eyes)";
+            if(userMsg.includes("hello") || userMsg.includes("hi") || userMsg.includes("hey")) {
+                reply = "Squeak! Hello human friend! Thanks for saving me from that storm!";
+            } else if(userMsg.includes("love") || userMsg.includes("cute")) {
+                reply = "💖 *Nuzzles your hand happily* I love it here so much!";
+                myPetCapy.love = Math.min(100, myPetCapy.love + 2);
+                document.getElementById('pet-love-stat').innerText = Math.floor(myPetCapy.love);
+            } else if(userMsg.includes("hungry") || userMsg.includes("food") || userMsg.includes("eat")) {
+                reply = myPetCapy.hunger > 40 ? "My belly feels quite fine, but cookies are always welcome!" : "Squeak... Yes, my tummy is rumbling a little bit!";
+            } else if(userMsg.includes("hat") || userMsg.includes("wear") || userMsg.includes("crown") || userMsg.includes("shades")) {
+                reply = myPetCapy.accessory !== "None" ? `Do you like my ${myPetCapy.accessory}? I feel like an absolute tycoon royal!` : "I'd love to wear a shiny hat or crown sometime!";
+            }
+
+            myPetCapy.statusText = reply;
+            myPetCapy.textTimer = 180;
+            inputEl.value = "";
+        }
+
+        function spawnHeartParticle(x, y) {
+            petHouseHearts.push({
+                x: x, y: y,
+                vx: Math.random() * 2 - 1, vy: -(1 + Math.random() * 2),
+                size: 14 + Math.random() * 10, alpha: 1
+            });
+        }
+
+        function drawHouseEnvironment() {
+            if (houseBgImage.complete && houseBgImage.naturalWidth !== 0) {
+                ctx.drawImage(houseBgImage, 0, 0, canvas.width, canvas.height);
+            } else {
+                ctx.fillStyle = "#8d6e63"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "#5d4037"; ctx.fillRect(0, canvas.height - 140, canvas.width, 140); 
+                ctx.fillStyle = "#4e342e"; ctx.fillRect(0, canvas.height - 146, canvas.width, 6); 
+            }
+
+            ctx.fillStyle = "#b71c1c"; ctx.fillRect(50, 100, 140, 220);
+            ctx.fillStyle = "#263238"; ctx.fillRect(75, 170, 90, 150);
+            
+            let fGlow = 40 + Math.sin(globalTime * 5) * 15;
+            ctx.fillStyle = `rgba(255, 112, 67, ${0.4 + Math.sin(globalTime)*0.1})`;
+            ctx.beginPath(); ctx.arc(120, 260, fGlow, 0, Math.PI*2); ctx.fill();
+
+            ctx.fillStyle = "#ffe082"; ctx.beginPath(); ctx.ellipse(canvas.width / 2, canvas.height / 2 + 75, 160, 48, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "#ffb300"; ctx.beginPath(); ctx.ellipse(canvas.width / 2, canvas.height / 2 + 75, 125, 36, 0, 0, Math.PI * 2); ctx.fill();
+
+            if (Math.random() < 0.004) {
+                myPetCapy.hunger = Math.max(0, myPetCapy.hunger - 1);
+                if (myPetCapy.hunger < 25 && myPetCapy.textTimer <= 0) {
+                    myPetCapy.statusText = "Squeak... hungry... please toss me a cookie... 🍪";
+                    myPetCapy.textTimer = 120;
+                }
+            }
+            document.getElementById('hunger-bar-fill').style.width = `${myPetCapy.hunger}%`;
+
+            myPetCapy.bob += 0.03;
+            if (Math.random() < 0.006 && !isSlidingToPet) {
+                myPetCapy.targetX = canvas.width / 2 + (Math.random() * 220 - 110);
+            }
+            myPetCapy.x += (myPetCapy.targetX - myPetCapy.x) * 0.04;
+
+            ctx.save();
+            ctx.translate(myPetCapy.x, myPetCapy.y + Math.sin(myPetCapy.bob)*1.5);
+            ctx.scale(2.2, 2.2); 
+            ctx.drawImage(capyImage, -32, -35, 64, 48);
+            
+            ctx.font = "10px sans-serif";
+            if (myPetCapy.accessory === "🎀 Pink Bow") ctx.fillText("🎀", 6, -10);
+            if (myPetCapy.accessory === "👑 Golden Crown") ctx.fillText("👑", -6, -33);
+            if (myPetCapy.accessory === "🕶️ Cool Shades") ctx.fillText("🕶️", -16, -21);
+            if (myPetCapy.accessory === "🎩 Top Hat") ctx.fillText("🎩", -8, -32);
+            ctx.restore();
+
+            ctx.font = "bold 16px sans-serif"; ctx.fillStyle = "#ffffff"; ctx.textAlign = "center";
+            ctx.fillText(`💖 ${myPetCapy.name} 💖`, myPetCapy.x, myPetCapy.y - 65);
+
+            if (myPetCapy.textTimer > 0) {
+                myPetCapy.textTimer--;
+                ctx.font = "italic 13px Georgia"; ctx.fillStyle = "#ffecb3";
+                ctx.fillText(myPetCapy.statusText, myPetCapy.x, myPetCapy.y + 70);
+            }
+
+            for(let i=petHouseHearts.length-1; i>=0; i--) {
+                let h = petHouseHearts[i]; h.x += h.vx; h.y += h.vy; h.alpha -= 0.015;
+                ctx.save(); ctx.globalAlpha = Math.max(0, h.alpha);
+                ctx.font = `${h.size}px sans-serif`; ctx.fillText("❤️", h.x, h.y); ctx.restore();
+                if(h.alpha <= 0) petHouseHearts.splice(i, 1);
+            }
+        }
+
+        function createSteam(wx, wy) {
+            let pos = toIso(wx + Math.random(), wy + Math.random());
+            steamParticles.push({
+                x: pos.x, y: pos.y, vx: (Math.random()*0.16 - 0.08), vy: -(0.3 + Math.random()*0.3), sz: 5 + Math.random()*6, alpha: 0.35
+            });
+        }
+
+        function getCanvasMousePos(e, rect) {
+            if (e.touches && e.touches.length > 0) {
+                return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+            }
+            return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        }
+        // ==========================================
+        // LOCAL CACHE SAVE & LOAD LOGIC ENGINE
+        // ==========================================
+        function saveGameToCache() {
+            const gameState = {
+                coinPoints: coinPoints,
+                yuzuStock: yuzuStock,
+                resortLevel: resortLevel,
+                resortXp: resortXp,
+                gameplayMode: gameplayMode,
+                mapData: mapData,
+                myPetCapy: {
+                    name: myPetCapy.name,
+                    accessory: myPetCapy.accessory,
+                    love: myPetCapy.love,
+                    hunger: myPetCapy.hunger
+                }
+            };
+            localStorage.setItem('capy_tycoon_save_v1', JSON.stringify(gameState));
+        }
+
+        function loadGameFromCache() {
+            const savedData = localStorage.getItem('capy_tycoon_save_v1');
+            if (!savedData) return false;
+
+            try {
+                const parsedState = JSON.parse(savedData);
+                
+                // Restore core economies
+                coinPoints = parsedState.coinPoints ?? 250;
+                yuzuStock = parsedState.yuzuStock ?? 2;
+                resortLevel = parsedState.resortLevel ?? 1;
+                resortXp = parsedState.resortXp ?? 0;
+                gameplayMode = parsedState.gameplayMode ?? "TYCOON";
+                if (parsedState.mapData) mapData = parsedState.mapData;
+
+                // Restore indoor pet companion status
+                if (parsedState.myPetCapy) {
+                    myPetCapy.name = parsedState.myPetCapy.name || "Adoraboo";
+                    myPetCapy.accessory = parsedState.myPetCapy.accessory || "None";
+                    myPetCapy.love = parsedState.myPetCapy.love ?? 15;
+                    myPetCapy.hunger = parsedState.myPetCapy.hunger ?? 80;
+                }
+
+                // UI adjustments depending on what scene they left off on
+                if (gameplayMode === "HOUSE") {
+                    document.getElementById('control-panel').style.display = "none";
+                    document.getElementById('hud-level-box').style.display = "none";
+                    document.getElementById('hud-herd-box').style.display = "none";
+                    document.getElementById('hud-stock-box').style.display = "none";
+                    document.getElementById('tycoon-reviews-layout').style.display = "none";
+                    document.getElementById('house-shop-panel').style.display = "flex";
+                    document.getElementById('main-title-header').innerText = `🏡 ${myPetCapy.name}'s Cozy House`;
+                    document.getElementById('sub-info').innerText = "Slide your mouse/finger across the capybara's back to give it warm pats!";
+                    document.getElementById('pet-love-stat').innerText = Math.floor(myPetCapy.love);
+                }
+                
+                addFeedbackText("💾 Progress Loaded from Cache!");
+                return true;
+            } catch (e) {
+                console.error("Error parsing save file matrix:", e);
+                return false;
+            }
+        }
+
+        function init() {
+            capybaras.push(new RealisticCapybara());
+            
+            const handleStart = (e) => {
+                let rect = canvas.getBoundingClientRect();
+                let pos = getCanvasMousePos(e, rect);
+                if (gameplayMode === "HOUSE" && Math.abs(pos.y - myPetCapy.y) < 120) {
+                    isSlidingToPet = true; lastPetX = pos.x;
+                }
+            };
+
+            const handleMove = (e) => {
+                if (!isSlidingToPet || gameplayMode !== "HOUSE") return;
+                let rect = canvas.getBoundingClientRect();
+                let pos = getCanvasMousePos(e, rect);
+                if (Math.abs(pos.x - lastPetX) > 12) { 
+                    myPetCapy.love = Math.min(100, myPetCapy.love + 0.5);
+                    document.getElementById('pet-love-stat').innerText = Math.floor(myPetCapy.love);
+                    myPetCapy.statusText = "Squeak~ ❤️ That tickles! *Cozy happy purring sounds*";
+                    myPetCapy.textTimer = 60;
+                    spawnHeartParticle(pos.x, pos.y);
+                    lastPetX = pos.x;
+                }
+            };
+
+            canvas.addEventListener('mousedown', handleStart);
+            canvas.addEventListener('touchstart', handleStart, {passive: true});
+            canvas.addEventListener('mousemove', handleMove);
+            canvas.addEventListener('touchmove', handleMove, {passive: true});
+
+            const handleEnd = () => { isSlidingToPet = false; };
+            window.addEventListener('mouseup', handleEnd);
+            window.addEventListener('touchend', handleEnd);
+
+            document.getElementById('pet-talk-input').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') talkToPetCompanion();
+            });
+
+            canvas.addEventListener('click', handleMapPlacementClick);
+
+            adoptBtn.addEventListener('click', () => {
+                if (coinPoints >= 60) { coinPoints -= 60; capybaras.push(new RealisticCapybara()); addFeedbackText("🐾 Scout found a wild Capybara!"); }
+            });
+            buildBtn.addEventListener('click', () => {
+                buildModeActive = !buildModeActive; feedModeActive = false;
+                buildBtn.classList.toggle('active', buildModeActive); feedBtn.classList.remove('active');
+            });
+            shopBtn.addEventListener('click', () => {
+                if (coinPoints >= 20) { coinPoints -= 20; yuzuStock++; addFeedbackText("🍊 Purchased 1 Yuzu Fruit"); }
+            });
+            feedBtn.addEventListener('click', () => {
+                feedModeActive = !feedModeActive; buildModeActive = false;
+                feedBtn.classList.toggle('active', feedModeActive); buildBtn.classList.remove('active');
+            });
+
+            requestAnimationFrame(engineFrameUpdate);
+        }
+
+        function handleMapPlacementClick(e) {
+            if (gamePaused) return;
+            let rect = canvas.getBoundingClientRect();
+            let clickX = e.clientX - rect.left; let clickY = e.clientY - rect.top;
+
+            if (clickX < 50 && clickY < 50) {
+                cheatTapCount++;
+                addFeedbackText(`🔮 Linking Cheat Matrix... (${cheatTapCount}/9)`);
+                if (cheatTapCount >= 9) {
+                    cheatTapCount = 0; resortLevel = 9; resortXp = MAX_XP_LIMIT - 1; coinPoints += 800;
+                    addFeedbackText("🚀 CHEAT READY: Next happy checkout triggers the House Cutscene!");
+                }
+                return;
+            }
+
+            if (gameplayMode === "HOUSE") return; 
+
+            let mouseWorld = toWorld(clickX, clickY);
+            let tx = Math.max(1, Math.min(MAP_SIZE - 2, Math.floor(mouseWorld.x)));
+            let ty = Math.max(1, Math.min(MAP_SIZE - 2, Math.floor(mouseWorld.y)));
+
+            if (buildModeActive) {
+                if (mapData[ty][tx] === 0 || mapData[ty][tx] === 4) {
+                    if (coinPoints >= 100) { mapData[ty][tx] = 1; coinPoints -= 100; addFeedbackText("Excavated Hot Spring! ♨️"); }
+                }
+                buildModeActive = false; buildBtn.classList.remove('active');
+            } else if (feedModeActive) {
+                if (yuzuStock > 0) { yuzuStock--; droppedYuzus.push({ wx: mouseWorld.x, wy: mouseWorld.y }); addFeedbackText("🍊 Dropped fresh Yuzu!"); }
+                feedModeActive = false; feedBtn.classList.remove('active');
+            }
+        }
+
+        function isOnsenCoastline(x, y) {
+            if (mapData[y][x] !== 1) return false;
+            if (x > 0 && mapData[y][x-1] !== 1) return true;
+            if (x < MAP_SIZE - 1 && mapData[y][x+1] !== 1) return true;
+            if (y > 0 && mapData[y-1][x] !== 1) return true;
+            return (y < MAP_SIZE - 1 && mapData[y+1][x] !== 1);
+        }
+
+        function drawSeamlessScene() {
+            globalTime += 0.03;
+            for (let y = 0; y < MAP_SIZE; y++) {
+                for (let x = 0; x < MAP_SIZE; x++) {
+                    let iso = toIso(x, y); let type = mapData[y][x];
+                    ctx.fillStyle = ((x + y) % 2 === 0) ? "#9ccb65" : "#91c459";
+                    ctx.beginPath(); ctx.moveTo(iso.x, iso.y);
+                    ctx.lineTo(iso.x + TILE_WIDTH / 2 + 0.4, iso.y + TILE_HEIGHT / 2 + 0.4);
+                    ctx.lineTo(iso.x, iso.y + TILE_HEIGHT + 0.4); ctx.lineTo(iso.x - TILE_WIDTH / 2, iso.y + TILE_HEIGHT / 2);
+                    ctx.fill();
+
+                    if (type === 1) {
+                        ctx.fillStyle = `rgba(41, 182, 246, ${0.85 + Math.sin(globalTime + x*0.4)*0.02})`;
+                        ctx.beginPath(); ctx.ellipse(iso.x, iso.y + TILE_HEIGHT/2, TILE_WIDTH/1.8, TILE_HEIGHT/1.8, 0, 0, Math.PI*2); ctx.fill();
+                        if (Math.random() < 0.03) createSteam(x, y);
+                    }
+                }
+            }
+
+            for (let y = 0; y < MAP_SIZE; y++) {
+                for (let x = 0; x < MAP_SIZE; x++) {
+                    let iso = toIso(x, y); let type = mapData[y][x]; let seed = stoneOffsets[y * MAP_SIZE + x];
+                    if (isOnsenCoastline(x, y)) {
+                        ctx.fillStyle = seed.col; ctx.beginPath(); ctx.ellipse(iso.x + seed.x, iso.y + TILE_HEIGHT/2 + seed.y, seed.r, seed.r * 0.6, 0, 0, Math.PI * 2); ctx.fill();
+                    }
+                    if (type === 4) { ctx.fillStyle = "#78909c"; ctx.beginPath(); ctx.ellipse(iso.x, iso.y + 12, 12, 8, 0, 0, Math.PI*2); ctx.fill(); }
+                    else if (type === 2) {
+                        ctx.fillStyle = "#4e342e"; ctx.fillRect(iso.x - 2, iso.y + 8, 4, 8); ctx.fillStyle = "#2e7d32";
+                        ctx.beginPath(); ctx.moveTo(iso.x, iso.y - 20); ctx.lineTo(iso.x + 9, iso.y + 8); ctx.lineTo(iso.x - 9, iso.y + 8); ctx.fill();
+                    } else if (type === 3) {
+                        ctx.fillStyle = "#90a4ae"; ctx.beginPath(); ctx.moveTo(iso.x - 4, iso.y + 6); ctx.lineTo(iso.x, iso.y - 18); ctx.lineTo(iso.x + 10, iso.y + 8); ctx.fill();
+                    }
+                }
+            }
+
+            droppedYuzus.forEach(fruit => {
+                let fPos = toIso(fruit.wx, fruit.wy);
+                ctx.fillStyle = "rgba(0,0,0,0.15)"; ctx.beginPath(); ctx.arc(fPos.x, fPos.y + TILE_HEIGHT/2, 5, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = "#ffb300"; ctx.beginPath(); ctx.arc(fPos.x, fPos.y + TILE_HEIGHT/2 - 2, 6, 0, Math.PI*2); ctx.fill();
+            });
+        }
+
+        function engineFrameUpdate() {
+            if (gamePaused) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (gameplayMode === "HOUSE") {
+                drawHouseEnvironment();
+            } else {
+                drawSeamlessScene();
+
+                for (let i = steamParticles.length - 1; i >= 0; i--) {
+                    let p = steamParticles[i]; p.x += p.vx; p.y += p.vy; p.alpha -= 0.005; p.sz += 0.08;
+                    ctx.save(); ctx.globalAlpha = Math.max(0, p.alpha); ctx.fillStyle = "#ffffff";
+                    ctx.beginPath(); ctx.arc(p.x, p.y + TILE_HEIGHT/2, p.sz, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+                    if (p.alpha <= 0) steamParticles.splice(i, 1);
+                }
+
+                capybaras.sort((a, b) => (a.wx + a.wy) - (b.wx + b.wy));
+                for (let i = capybaras.length - 1; i >= 0; i--) {
+                    let c = capybaras[i]; c.update(); c.draw();
+                    if (c.vacationTimer <= 0 || c.stress >= 100) { triggerPostReview(c); capybaras.splice(i, 1); }
+                }
+            }
+
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                let ft = floatingTexts[i]; ft.y -= 0.5; ft.life--;
+                ctx.save(); ctx.globalAlpha = Math.min(1, ft.life / 20); ctx.fillStyle = "#3e2723";
+                ctx.font = "bold 13px sans-serif"; ctx.textAlign = "center"; ctx.fillText(ft.msg, ft.x, ft.y); ctx.restore();
+                if (ft.life <= 0) floatingTexts.splice(i, 1);
+            }
+
+            levelBarFill.style.width = `${Math.max(0, Math.min(100, (resortXp / MAX_XP_LIMIT) * 100))}%`;
+            zenDisplay.textContent = Math.floor(coinPoints);
+            capyDisplay.textContent = capybaras.length;
+            yuzuDisplay.textContent = yuzuStock;
+            levelDisplay.textContent = resortLevel;
+            xpDisplay.textContent = Math.floor(resortXp);
+            
+            adoptBtn.disabled = (coinPoints < 60);
+            buildBtn.disabled = (coinPoints < 100);
+            shopBtn.disabled = (coinPoints < 20);
+            feedBtn.disabled = (yuzuStock <= 0 && !feedModeActive);
+
+            requestAnimationFrame(engineFrameUpdate);
+        }
+
+        init();
+    </script>
+</body>
+</html>
