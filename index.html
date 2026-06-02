@@ -1168,6 +1168,23 @@ if (gameplayMode === "HOUSE" && isStreamingIndoor) {
                     ctx.beginPath(); ctx.arc(p.x, p.y + TILE_HEIGHT/2, p.sz, 0, Math.PI * 2); ctx.fill(); ctx.restore();
                     if (p.alpha <= 0) steamParticles.splice(i, 1);
                 }
+                // Inside engineFrameUpdate, under the else branch (TYCOON mode):
+if (capybaras.length === 0) {
+    // Optional: Add a delay so it doesn't spawn instantly
+    // Here we check if you have at least 60 coins to afford the scout,
+    // or trigger a 'rescue' if you are totally broke.
+    if (coinPoints >= 60) {
+        coinPoints -= 60;
+        capybaras.push(new RealisticCapybara());
+        addFeedbackText("🐾 Rescue: New Capybara joined!");
+        saveGameToCache();
+    } else {
+        // Emergency free spawn if you are truly stuck with 0 coins
+        capybaras.push(new RealisticCapybara());
+        addFeedbackText("🆘 Emergency Rescue: A stray arrived!");
+    }
+}
+                
                 capybaras.sort((a, b) => (a.wx + a.wy) - (b.wx + b.wy));
                 for (let i = capybaras.length - 1; i >= 0; i--) {
                     let c = capybaras[i]; c.update(); c.draw();
